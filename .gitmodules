@@ -1,0 +1,3 @@
+[submodule "base-station/pkg/radio/RadioHead"]
+	path = base-station/pkg/radio/RadioHead
+	url = https://github.com/adafruit/RadioHead.git
