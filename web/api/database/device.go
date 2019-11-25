@@ -14,27 +14,21 @@ const (
 	Vote
 )
 
-type info struct {
+// Device contains device-specific information about individual bands.
+type Device struct {
+	Id     uint8   `json:"-"`
 	Mode   Mode    `json:"mode"`
 	Colors []uint8 `json:"colors"`
 }
 
-// Device contains device-specific information about individual bands.
-type Device struct {
-	id   uint8
-	info info
-}
-
 func create(id uint8, buf []byte) (*Device, error) {
-	var deviceInfo info
+	var deviceInfo Device
 
 	err := json.Unmarshal(buf, &deviceInfo)
 	if err != nil {
 		return &Device{}, fmt.Errorf("Could not unmarshall device info for device with ID:%d", id)
 	}
 
-	return &Device{
-		id:   id,
-		info: deviceInfo,
-	}, nil
+	deviceInfo.id = id
+	return &deviceInfo, nil
 }
