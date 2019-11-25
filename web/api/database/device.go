@@ -16,7 +16,7 @@ const (
 
 // Device contains device-specific information about individual bands.
 type Device struct {
-	Id     uint8   `json:"-"`
+	ID     uint8   `json:"-"`
 	Mode   Mode    `json:"mode"`
 	Colors []uint8 `json:"colors"`
 }
@@ -29,6 +29,6 @@ func create(id uint8, buf []byte) (*Device, error) {
 		return &Device{}, fmt.Errorf("Could not unmarshall device info for device with ID:%d", id)
 	}
 
-	deviceInfo.id = id
+	deviceInfo.ID = id
 	return &deviceInfo, nil
 }

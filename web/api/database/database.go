@@ -106,7 +106,7 @@ func (handler *DBHandler) AddDevice(id uint8) error {
 	return handler.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("Devices"))
 
-		emptyDevice := Device{Id: id, Mode: Normal}
+		emptyDevice := Device{ID: id, Mode: Normal}
 		d, err := json.Marshal(&emptyDevice)
 		if err != nil {
 			return err
@@ -128,7 +128,7 @@ func (handler *DBHandler) UpdateDevices(devices []Device) error {
 				return err
 			}
 
-			err = b.Put([]byte{device.Id}, d)
+			err = b.Put([]byte{device.ID}, d)
 			if err != nil {
 				return err
 			}
