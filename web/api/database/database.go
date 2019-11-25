@@ -1,6 +1,7 @@
 package database
 
 import (
+	"encoding/json"
 	"fmt"
 	bolt "go.etcd.io/bbolt"
 	"log"
@@ -70,7 +71,7 @@ func (handler *DBHandler) GetDevice(id uint8) (Device, error) {
 			return err
 		}
 
-		device = dev
+		*device = *dev
 		return nil
 	})
 
@@ -98,4 +99,41 @@ func (handler *DBHandler) GetAllDevices() ([]Device, error) {
 	})
 
 	return *devices, err
+}
+
+// AddDevice adds a single empty device to the database.
+func (handler *DBHandler) AddDevice(id uint8) error {
+	return handler.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("Devices"))
+
+		emptyDevice := Device{Id: id, Mode: Normal}
+		d, err := json.Marshal(&emptyDevice)
+		if err != nil {
+			return err
+		}
+
+		err = b.Put([]byte{id}, d)
+		return err
+	})
+}
+
+// UpdateDevices updates a list of devices in the database.
+func (handler *DBHandler) UpdateDevices(devices []Device) error {
+	return handler.db.Batch(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("Devices"))
+
+		for _, device := range devices {
+			d, err := json.Marshal(&device)
+			if err != nil {
+				return err
+			}
+
+			err = b.Put([]byte{device.Id}, d)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }
