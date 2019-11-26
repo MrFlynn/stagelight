@@ -80,7 +80,7 @@ func (handler *DBHandler) GetDevice(id uint8) (Device, error) {
 
 // GetAllDevices gets a list of all devices in the database.
 func (handler *DBHandler) GetAllDevices() ([]Device, error) {
-	var devices *[]Device
+	devices := &[]Device{}
 
 	err := handler.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("Devices"))

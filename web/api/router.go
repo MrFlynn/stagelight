@@ -26,10 +26,20 @@ func startAndServe() {
 		device, err := handler.GetDevice(uint8(id))
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Could not find device with ID %d", id), http.StatusNotFound)
+			return
 		}
 
 		json.NewEncoder(w).Encode(device)
-	}).Methods("GET")
+	}).Methods(http.MethodGet)
+
+	router.HandleFunc("/device/all", func(w http.ResponseWriter, r *http.Request) {
+		devices, err := handler.GetAllDevices()
+		if err != nil {
+			http.Error(w, "Coud not get a list of devices", http.StatusInternalServerError)
+		}
+
+		json.NewEncoder(w).Encode(devices)
+	}).Methods(http.MethodGet)
 
 	srv := &http.Server{
 		Handler:      router,
