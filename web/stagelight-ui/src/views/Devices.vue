@@ -12,17 +12,15 @@
                 <tr v-for="device in devices" v-bind:key="device.id">
                     <td>{{ device.id }}</td>
                     <td>
-                        <select>
-                            <option>{{ nameFromColor(device.colors[0]) }}</option>
-                            <option v-for="opt in getOtherItems(defaultColors, nameFromColor(device.colors[0]))" v-bind:key="opt">
+                        <select v-model="device.colors[0]">
+                            <option v-for="opt in getOtherItems(defaultColors, nameFromColor(device.colors[0]))" :key="opt" :value="defaultColors[opt]">
                                 {{ opt }}
                             </option>
                         </select>
                     </td>
                     <td>
-                        <select>
-                            <option>{{ nameFromModeID(device.mode) }}</option>
-                            <option v-for="opt in getOtherItems(modes, nameFromModeID(device.mode))" v-bind:key="opt">
+                        <select v-model="device.mode">
+                            <option v-for="opt in getOtherItems(modes, nameFromModeID(device.mode))" :key="opt" :value="modes[opt]">
                                 {{ opt }}
                             </option>
                         </select>
@@ -30,7 +28,7 @@
                 </tr>
             </tbody>
         </table>
-        <button>Submit</button>
+        <button v-on:click="submitData">Submit</button>
     </div>
 </template>
 
@@ -72,9 +70,15 @@ export default {
         nameFromModeID: function (mode) {
             return this.swap(this.modes)[mode]
         },
-        getOtherItems: function(obj, rem) {
-            var keys = Object.keys(obj)
-            return keys.filter(e => (e != rem))
+        getOtherItems: function(obj, first) {
+            var keys = Object.keys(obj).filter(e => (e != first))
+            keys.unshift(first)
+
+            return keys
+        },
+        submitData: function () {
+            console.log(this.devices)
+            axios.post('http://localhost:8000/device/update', this.devices)
         }
     }
 }
