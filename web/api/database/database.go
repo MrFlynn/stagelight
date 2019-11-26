@@ -56,9 +56,10 @@ func (handler *DBHandler) initialize() error {
 
 // GetDevice gets information about specific device from the database.
 func (handler *DBHandler) GetDevice(id uint8) (Device, error) {
-	var device *Device
+	device := &Device{}
 
 	err := handler.db.View(func(tx *bolt.Tx) error {
+		var err error
 		c := tx.Bucket([]byte("Devices")).Cursor()
 
 		_, v := c.Seek([]byte{id})
@@ -66,12 +67,11 @@ func (handler *DBHandler) GetDevice(id uint8) (Device, error) {
 			return fmt.Errorf("Could not find device with ID %d", id)
 		}
 
-		dev, err := create(id, v)
+		device, err = create(id, v)
 		if err != nil {
 			return err
 		}
 
-		*device = *dev
 		return nil
 	})
 
