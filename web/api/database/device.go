@@ -1,8 +1,9 @@
 package database
 
-import "encoding/json"
-
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // Mode enumerates device modes.
 type Mode int
@@ -16,19 +17,34 @@ const (
 
 // Device contains device-specific information about individual bands.
 type Device struct {
-	ID     uint8   `json:"-"`
-	Mode   Mode    `json:"mode"`
-	Colors []uint8 `json:"colors"`
+	ID     uint8    `json:"id"`
+	Mode   Mode     `json:"mode"`
+	Colors []uint32 `json:"colors"`
 }
 
-func create(id uint8, buf []byte) (*Device, error) {
-	var deviceInfo Device
+// MarshallJSON is the interface method for json.Marshall for the Device struct.
+func (d Device) MarshallJSON() ([]byte, error) {
+	return json.Marshal(d)
+}
 
-	err := json.Unmarshal(buf, &deviceInfo)
-	if err != nil {
-		return &Device{}, fmt.Errorf("Could not unmarshall device info for device with ID:%d", id)
+// UnmarshalJSON is the interface method for json.Unmarshal for the Device struct.
+// This method also provides some validation.
+func (d *Device) UnmarshalJSON(b []byte) error {
+	type Alias Device
+	aux := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(d),
 	}
 
-	deviceInfo.ID = id
-	return &deviceInfo, nil
+	err := json.Unmarshal(b, &aux)
+	if err != nil {
+		return err
+	}
+
+	if !(d.Mode == 0) && !(d.Mode == 1) {
+		return fmt.Errorf("Mode %d is not a valid mode. Must be either 0 or 1", d.Mode)
+	}
+
+	return nil
 }

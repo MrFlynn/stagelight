@@ -59,15 +59,15 @@ func (handler *DBHandler) GetDevice(id uint8) (Device, error) {
 	device := &Device{}
 
 	err := handler.db.View(func(tx *bolt.Tx) error {
-		var err error
 		c := tx.Bucket([]byte("Devices")).Cursor()
 
 		_, v := c.Seek([]byte{id})
 		if v == nil {
+			log.Printf("Could not find device with ID %d", id)
 			return fmt.Errorf("Could not find device with ID %d", id)
 		}
 
-		device, err = create(id, v)
+		err := json.Unmarshal(v, device)
 		if err != nil {
 			return err
 		}
@@ -86,12 +86,15 @@ func (handler *DBHandler) GetAllDevices() ([]Device, error) {
 		b := tx.Bucket([]byte("Devices"))
 
 		err := b.ForEach(func(k, v []byte) error {
-			dev, err := create(k[0], v)
+			var dev Device
+
+			err := json.Unmarshal(v, &dev)
 			if err != nil {
+				log.Printf("Could not get device with ID %d", k[0])
 				return err
 			}
 
-			*devices = append(*devices, *dev)
+			*devices = append(*devices, dev)
 			return nil
 		})
 
@@ -113,7 +116,13 @@ func (handler *DBHandler) AddDevice(id uint8) error {
 		}
 
 		err = b.Put([]byte{id}, d)
-		return err
+		if err != nil {
+			log.Printf("Could not create device with ID %d", id)
+			return err
+		}
+
+		log.Printf("Succesfully create device with ID %d", id)
+		return nil
 	})
 }
 
@@ -130,8 +139,11 @@ func (handler *DBHandler) UpdateDevices(devices []Device) error {
 
 			err = b.Put([]byte{device.ID}, d)
 			if err != nil {
+				log.Printf("Unable to update device with ID %d", device.ID)
 				return err
 			}
+
+			log.Printf("Sucessfully updated device with ID %d", device.ID)
 		}
 
 		return nil
