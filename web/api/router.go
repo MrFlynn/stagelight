@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/MrFlynn/stagelight/web/api/database"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
@@ -87,10 +88,15 @@ func createServer() *http.Server {
 	router.HandleFunc("/device/all", allDeviceHandler).Methods(http.MethodGet)
 	router.HandleFunc("/device/update", updateDevices).
 		Methods(http.MethodPost).
-		Headers("Content-Type", "application/json")
+		Headers("Content-Type", "application/json;charset=utf-8")
+
+	// CORS settings.
+	origins := handlers.AllowedOrigins([]string{"*"})
+	methods := handlers.AllowedMethods([]string{http.MethodGet, http.MethodPost, http.MethodOptions})
+	headers := handlers.AllowedHeaders([]string{"Content-Type", "X-Requested-With"})
 
 	srv := &http.Server{
-		Handler:      router,
+		Handler:      handlers.CORS(origins, methods, headers)(router),
 		Addr:         "127.0.0.1:8000",
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
