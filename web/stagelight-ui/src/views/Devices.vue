@@ -53,8 +53,9 @@ export default {
         }
     },
     created () {
-        axios.get('http://localhost:8000/device/all')
-        .then(response => {
+        axios.get(
+            'http://localhost:8000/device/all'
+        ).then(response => {
             this.devices = response.data
         })
     },
@@ -77,8 +78,14 @@ export default {
             return keys
         },
         submitData: function () {
-            console.log(this.devices)
-            axios.post('http://localhost:8000/device/update', this.devices)
+            axios.post(
+                'http://localhost:8000/device/update',
+                this.devices
+            ).then(r => {
+                console.log(r)
+            }).catch(e => {
+                console.log(e)
+            })
         }
     }
 }
