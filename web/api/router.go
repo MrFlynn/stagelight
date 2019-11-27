@@ -12,9 +12,11 @@ import (
 	"github.com/MrFlynn/stagelight/web/api/database"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 )
 
 var dbhandler *database.DBHandler
+var upgrader = websocket.Upgrader{}
 
 func singleDeviceHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(mux.Vars(r)["id"], 10, 8)
@@ -75,6 +77,31 @@ func updateDevices(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+func writeWs(ws *websocket.Conn) {
+	d, err := dbhandler.GetAllDevices()
+	if err != nil {
+		log.Println("Could not get list of devices to send over websocket")
+	}
+
+	ws.WriteJSON(d)
+}
+
+func wsHandler(w http.ResponseWriter, r *http.Request) {
+	ws, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("Could not upgrade connection from %s to websocket", r.RemoteAddr)
+		return
+	}
+
+	go func() {
+		writeWs(ws)
+
+		for range time.Tick(30 * time.Second) {
+			writeWs(ws)
+		}
+	}()
+}
+
 func createServer() *http.Server {
 	log.Println("Creating new database connection...")
 
@@ -89,6 +116,7 @@ func createServer() *http.Server {
 	router.HandleFunc("/device/update", updateDevices).
 		Methods(http.MethodPost).
 		Headers("Content-Type", "application/json;charset=utf-8")
+	router.HandleFunc("/ws", wsHandler).Methods(http.MethodGet)
 
 	// CORS settings.
 	origins := handlers.AllowedOrigins([]string{"*"})
