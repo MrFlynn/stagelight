@@ -69,6 +69,20 @@ func updateDevices(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+func getVotes(w http.ResponseWriter, r *http.Request) {
+	votes, err := dbhandler.Get("Votes", nil)
+	if err != nil {
+		log.Printf("Unable to get list of votes: %s", err)
+		http.Error(w, "Could not get votes", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json;charset=utf-8")
+	json.NewEncoder(w).Encode(votes)
+
+	log.Println("Sucessfully got list of votes")
+}
+
 func writeWs(ws *websocket.Conn) {
 	d, err := dbhandler.GetAll("Devices")
 	if err != nil {
@@ -108,6 +122,7 @@ func createServer() *http.Server {
 	router.HandleFunc("/device/update", updateDevices).
 		Methods(http.MethodPost).
 		Headers("Content-Type", "application/json;charset=utf-8")
+	router.HandleFunc("/votes", getVotes).Methods(http.MethodGet)
 	router.HandleFunc("/ws", wsHandler).Methods(http.MethodGet)
 
 	// CORS settings.
