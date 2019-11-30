@@ -25,7 +25,7 @@ func singleDeviceHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	device, err := dbhandler.GetDevice(uint8(id))
+	device, err := dbhandler.Get("Devices", uint8(id))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Could not find device with ID %d", id), http.StatusNotFound)
 		return
@@ -38,9 +38,9 @@ func singleDeviceHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func allDeviceHandler(w http.ResponseWriter, r *http.Request) {
-	devices, err := dbhandler.GetAllDevices()
+	devices, err := dbhandler.GetAll("Devices")
 	if err != nil {
-		log.Println("Unable to get list of devices.")
+		log.Printf("Unable to get list of devices: %s", err)
 		http.Error(w, "Coud not get a list of devices", http.StatusInternalServerError)
 		return
 	}
@@ -48,12 +48,10 @@ func allDeviceHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	json.NewEncoder(w).Encode(devices)
 
-	log.Println("Sucessfully got a list of all devices.")
+	log.Println("Sucessfully got a list of all devices")
 }
 
 func updateDevices(w http.ResponseWriter, r *http.Request) {
-	var devices []database.Device
-
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Malformed JSON request", http.StatusBadRequest)
@@ -62,13 +60,7 @@ func updateDevices(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
-	err = json.Unmarshal(body, &devices)
-	if err != nil {
-		http.Error(w, "Could not process JSON request. Please check format", http.StatusBadRequest)
-		return
-	}
-
-	err = dbhandler.UpdateDevices(devices)
+	err = dbhandler.AddMultiple("Devices", body)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%s", err), http.StatusBadRequest)
 		return
@@ -78,7 +70,7 @@ func updateDevices(w http.ResponseWriter, r *http.Request) {
 }
 
 func writeWs(ws *websocket.Conn) {
-	d, err := dbhandler.GetAllDevices()
+	d, err := dbhandler.GetAll("Devices")
 	if err != nil {
 		log.Println("Could not get list of devices to send over websocket")
 	}
