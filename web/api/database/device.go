@@ -3,6 +3,10 @@ package database
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"reflect"
+
+	bolt "go.etcd.io/bbolt"
 )
 
 // Mode enumerates device modes.
@@ -47,4 +51,144 @@ func (d *Device) UnmarshalJSON(b []byte) error {
 	}
 
 	return nil
+}
+
+// DeviceController is a struct containing bucket information as well as required interface methods.
+type DeviceController struct {
+	tableName string `default:"Devices"`
+}
+
+func (dc *DeviceController) Initialize(db *bolt.DB) error {
+	dc.tableName = "Devices"
+
+	err := db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucket([]byte(dc.GetName()))
+		if err != nil {
+			return fmt.Errorf("Could not create bucket with name %s", dc.tableName)
+		}
+
+		return nil
+	})
+
+	return err
+}
+
+func (dc DeviceController) Get(db *bolt.DB, identifier interface{}) (interface{}, error) {
+	device := &Device{}
+
+	id, ok := identifier.(uint8)
+	if !ok {
+		return device, fmt.Errorf("Could not convert id from interface{} to uint8")
+	}
+
+	err := db.View(func(tx *bolt.Tx) error {
+		c := tx.Bucket([]byte(dc.GetName())).Cursor()
+
+		_, v := c.Seek([]byte{id})
+		if v == nil {
+			log.Printf("Could not find device with ID %d", id)
+			return fmt.Errorf("Could not find device with ID %d", id)
+		}
+
+		err := json.Unmarshal(v, device)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return reflect.ValueOf(device).Interface(), err
+}
+
+func (dc DeviceController) GetAll(db *bolt.DB) ([]interface{}, error) {
+	i := make([]interface{}, 0)
+	devices := &i
+
+	err := db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(dc.GetName()))
+
+		err := b.ForEach(func(k, v []byte) error {
+			var dev Device
+
+			err := json.Unmarshal(v, &dev)
+			if err != nil {
+				log.Printf("Could not get device with ID %d", k[0])
+				return err
+			}
+
+			*devices = append(*devices, reflect.ValueOf(dev).Interface())
+			return nil
+		})
+
+		return err
+	})
+
+	return *devices, err
+}
+
+func (dc DeviceController) GetName() string {
+	name := dc.tableName
+	if name == "" {
+		t := reflect.TypeOf(dc)
+		f, _ := t.FieldByName("tableName")
+		name = f.Tag.Get("default")
+	}
+
+	return name
+}
+
+func (dc DeviceController) Add(db *bolt.DB, dev []byte) error {
+	device := Device{}
+	err := json.Unmarshal(dev, &device)
+	if err != nil {
+		fmt.Errorf("Could not process JSON request. Please check format")
+	}
+
+	return db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(dc.GetName()))
+
+		d, err := json.Marshal(&device)
+		if err != nil {
+			return err
+		}
+
+		err = b.Put([]byte{device.ID}, d)
+		if err != nil {
+			log.Printf("Could not create device with ID %d", device.ID)
+			return err
+		}
+
+		log.Printf("Succesfully create device with ID %d", device.ID)
+		return nil
+	})
+}
+
+func (dc DeviceController) AddMultiple(db *bolt.DB, devs []byte) error {
+	devices := []Device{}
+	err := json.Unmarshal(devs, &devices)
+	if err != nil {
+		fmt.Errorf("Could not process JSON request. Please check format")
+	}
+
+	return db.Batch(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(dc.GetName()))
+
+		for _, device := range devices {
+			d, err := json.Marshal(&device)
+			if err != nil {
+				return err
+			}
+
+			err = b.Put([]byte{device.ID}, d)
+			if err != nil {
+				log.Printf("Unable to update device with ID %d", device.ID)
+				return err
+			}
+
+			log.Printf("Sucessfully updated device with ID %d", device.ID)
+		}
+
+		return nil
+	})
 }
