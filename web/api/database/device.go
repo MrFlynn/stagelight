@@ -58,6 +58,7 @@ type DeviceController struct {
 	tableName string `default:"Devices"`
 }
 
+// Initialize creates the bucket required for the "Devices" controller.
 func (dc *DeviceController) Initialize(db *bolt.DB) error {
 	dc.tableName = "Devices"
 
@@ -73,6 +74,7 @@ func (dc *DeviceController) Initialize(db *bolt.DB) error {
 	return err
 }
 
+// Get method gets a single device from the Devices bucket that matches the passed integer ID.
 func (dc DeviceController) Get(db *bolt.DB, identifier interface{}) (interface{}, error) {
 	device := &Device{}
 
@@ -101,6 +103,7 @@ func (dc DeviceController) Get(db *bolt.DB, identifier interface{}) (interface{}
 	return reflect.ValueOf(device).Interface(), err
 }
 
+// GetAll method gets a list of all devices.
 func (dc DeviceController) GetAll(db *bolt.DB) ([]interface{}, error) {
 	i := make([]interface{}, 0)
 	devices := &i
@@ -127,6 +130,7 @@ func (dc DeviceController) GetAll(db *bolt.DB) ([]interface{}, error) {
 	return *devices, err
 }
 
+// GetName gets the default bucket name (or tableName) of the given struct.
 func (dc DeviceController) GetName() string {
 	name := dc.tableName
 	if name == "" {
@@ -138,11 +142,12 @@ func (dc DeviceController) GetName() string {
 	return name
 }
 
+// Add method adds a single device based on the inputs from a JSON byte stream.
 func (dc DeviceController) Add(db *bolt.DB, dev []byte) error {
 	device := Device{}
 	err := json.Unmarshal(dev, &device)
 	if err != nil {
-		fmt.Errorf("Could not process JSON request. Please check format")
+		return fmt.Errorf("Could not process JSON request. Please check format")
 	}
 
 	return db.Update(func(tx *bolt.Tx) error {
@@ -164,11 +169,12 @@ func (dc DeviceController) Add(db *bolt.DB, dev []byte) error {
 	})
 }
 
+// AddMultiple method adds multiple devices from a JSON byte stream.
 func (dc DeviceController) AddMultiple(db *bolt.DB, devs []byte) error {
 	devices := []Device{}
 	err := json.Unmarshal(devs, &devices)
 	if err != nil {
-		fmt.Errorf("Could not process JSON request. Please check format")
+		return fmt.Errorf("Could not process JSON request. Please check format")
 	}
 
 	return db.Batch(func(tx *bolt.Tx) error {

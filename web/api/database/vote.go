@@ -72,6 +72,7 @@ func (vc VoteController) Get(db *bolt.DB, _ interface{}) (interface{}, error) {
 	return reflect.ValueOf(votes).Interface(), err
 }
 
+// GetAll method is an alias for Get method except the output is packaged into a slice.
 func (vc VoteController) GetAll(db *bolt.DB) ([]interface{}, error) {
 	votes, err := vc.Get(db, nil)
 
@@ -81,6 +82,7 @@ func (vc VoteController) GetAll(db *bolt.DB) ([]interface{}, error) {
 	return votesSlice, err
 }
 
+// GetName gets the default name of the struct.
 func (vc VoteController) GetName() string {
 	name := vc.tableName
 	if name == "" {
@@ -92,6 +94,7 @@ func (vc VoteController) GetName() string {
 	return name
 }
 
+// Add method updates the vote count from the input of a JSON byte stream.
 func (vc VoteController) Add(db *bolt.DB, votes []byte) error {
 	results := VoteResult{}
 
@@ -120,6 +123,7 @@ func (vc VoteController) Add(db *bolt.DB, votes []byte) error {
 	})
 }
 
+// AddMultiple is an alias for the Add method.
 func (vc VoteController) AddMultiple(db *bolt.DB, votes []byte) error {
 	return vc.Add(db, votes)
 }
