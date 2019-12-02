@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 
 	bolt "go.etcd.io/bbolt"
 )
@@ -17,7 +18,6 @@ type Controller interface {
 	// Generic get methods.
 	Get(*bolt.DB, interface{}) (interface{}, error)
 	GetAll(*bolt.DB) ([]interface{}, error)
-	GetName() string
 
 	// Generic add/update methods
 	Add(*bolt.DB, []byte) error
@@ -45,7 +45,7 @@ func New(path string) DBHandler {
 
 	m := map[string]Controller{}
 	for _, c := range subControllers {
-		m[c.GetName()] = c
+		m[GetName(c)] = c
 	}
 
 	handler := DBHandler{
@@ -97,4 +97,22 @@ func (h *DBHandler) AddMultiple(controller string, set []byte) error {
 	}
 
 	return fmt.Errorf("Could not find controller with name %s", controller)
+}
+
+// GetName gets the default bucket name (or tableName) of the given struct.
+func GetName(c Controller) string {
+	v := reflect.ValueOf(c)
+	f := v.Elem().FieldByName("tableName")
+
+	if f.IsValid() {
+		tableName := f.String()
+		if tableName == "" {
+			tf, _ := reflect.TypeOf(c).Elem().FieldByName("tableName")
+			return tf.Tag.Get("default")
+		}
+
+		return tableName
+	}
+
+	return ""
 }

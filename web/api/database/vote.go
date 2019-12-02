@@ -23,12 +23,12 @@ type VoteController struct {
 
 // Initialize sets the fields of the passed VoteController and create the required bucket.
 func (vc *VoteController) Initialize(db *bolt.DB) error {
-	vc.tableName = vc.GetName()
+	vc.tableName = GetName(vc)
 
 	err := db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucket([]byte(vc.GetName()))
+		_, err := tx.CreateBucket([]byte(GetName(vc)))
 		if err != nil {
-			return fmt.Errorf("Could not create bucket with name %s", vc.GetName())
+			return fmt.Errorf("Could not create bucket with name %s", GetName(vc))
 		}
 
 		return nil
@@ -45,11 +45,11 @@ func (vc *VoteController) Initialize(db *bolt.DB) error {
 }
 
 // Get method gets all of the votes from the database.
-func (vc VoteController) Get(db *bolt.DB, _ interface{}) (interface{}, error) {
+func (vc *VoteController) Get(db *bolt.DB, _ interface{}) (interface{}, error) {
 	votes := VoteResult{0, 0}
 
 	err := db.View(func(tx *bolt.Tx) error {
-		c := tx.Bucket([]byte(vc.GetName())).Cursor()
+		c := tx.Bucket([]byte(GetName(vc))).Cursor()
 
 		_, pos := c.First()
 		if pos == nil {
@@ -82,20 +82,8 @@ func (vc VoteController) GetAll(db *bolt.DB) ([]interface{}, error) {
 	return votesSlice, err
 }
 
-// GetName gets the default name of the struct.
-func (vc VoteController) GetName() string {
-	name := vc.tableName
-	if name == "" {
-		t := reflect.TypeOf(vc)
-		f, _ := t.FieldByName("tableName")
-		name = f.Tag.Get("default")
-	}
-
-	return name
-}
-
 // Add method updates the vote count from the input of a JSON byte stream.
-func (vc VoteController) Add(db *bolt.DB, votes []byte) error {
+func (vc *VoteController) Add(db *bolt.DB, votes []byte) error {
 	results := VoteResult{}
 
 	err := json.Unmarshal(votes, &results)
@@ -105,7 +93,7 @@ func (vc VoteController) Add(db *bolt.DB, votes []byte) error {
 	}
 
 	return db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(vc.GetName()))
+		b := tx.Bucket([]byte(GetName(vc)))
 
 		err := b.Put([]byte{0}, []byte{uint8(results.Positive)})
 		if err != nil {

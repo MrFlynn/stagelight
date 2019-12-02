@@ -63,7 +63,7 @@ func (dc *DeviceController) Initialize(db *bolt.DB) error {
 	dc.tableName = "Devices"
 
 	err := db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucket([]byte(dc.GetName()))
+		_, err := tx.CreateBucket([]byte(GetName(dc)))
 		if err != nil {
 			return fmt.Errorf("Could not create bucket with name %s", dc.tableName)
 		}
@@ -75,7 +75,7 @@ func (dc *DeviceController) Initialize(db *bolt.DB) error {
 }
 
 // Get method gets a single device from the Devices bucket that matches the passed integer ID.
-func (dc DeviceController) Get(db *bolt.DB, identifier interface{}) (interface{}, error) {
+func (dc *DeviceController) Get(db *bolt.DB, identifier interface{}) (interface{}, error) {
 	device := &Device{}
 
 	id, ok := identifier.(uint8)
@@ -84,7 +84,7 @@ func (dc DeviceController) Get(db *bolt.DB, identifier interface{}) (interface{}
 	}
 
 	err := db.View(func(tx *bolt.Tx) error {
-		c := tx.Bucket([]byte(dc.GetName())).Cursor()
+		c := tx.Bucket([]byte(GetName(dc))).Cursor()
 
 		_, v := c.Seek([]byte{id})
 		if v == nil {
@@ -104,12 +104,12 @@ func (dc DeviceController) Get(db *bolt.DB, identifier interface{}) (interface{}
 }
 
 // GetAll method gets a list of all devices.
-func (dc DeviceController) GetAll(db *bolt.DB) ([]interface{}, error) {
+func (dc *DeviceController) GetAll(db *bolt.DB) ([]interface{}, error) {
 	i := make([]interface{}, 0)
 	devices := &i
 
 	err := db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(dc.GetName()))
+		b := tx.Bucket([]byte(GetName(dc)))
 
 		err := b.ForEach(func(k, v []byte) error {
 			var dev Device
@@ -130,20 +130,8 @@ func (dc DeviceController) GetAll(db *bolt.DB) ([]interface{}, error) {
 	return *devices, err
 }
 
-// GetName gets the default bucket name (or tableName) of the given struct.
-func (dc DeviceController) GetName() string {
-	name := dc.tableName
-	if name == "" {
-		t := reflect.TypeOf(dc)
-		f, _ := t.FieldByName("tableName")
-		name = f.Tag.Get("default")
-	}
-
-	return name
-}
-
 // Add method adds a single device based on the inputs from a JSON byte stream.
-func (dc DeviceController) Add(db *bolt.DB, dev []byte) error {
+func (dc *DeviceController) Add(db *bolt.DB, dev []byte) error {
 	device := Device{}
 	err := json.Unmarshal(dev, &device)
 	if err != nil {
@@ -151,7 +139,7 @@ func (dc DeviceController) Add(db *bolt.DB, dev []byte) error {
 	}
 
 	return db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(dc.GetName()))
+		b := tx.Bucket([]byte(GetName(dc)))
 
 		d, err := json.Marshal(&device)
 		if err != nil {
@@ -170,7 +158,7 @@ func (dc DeviceController) Add(db *bolt.DB, dev []byte) error {
 }
 
 // AddMultiple method adds multiple devices from a JSON byte stream.
-func (dc DeviceController) AddMultiple(db *bolt.DB, devs []byte) error {
+func (dc *DeviceController) AddMultiple(db *bolt.DB, devs []byte) error {
 	devices := []Device{}
 	err := json.Unmarshal(devs, &devices)
 	if err != nil {
@@ -178,7 +166,7 @@ func (dc DeviceController) AddMultiple(db *bolt.DB, devs []byte) error {
 	}
 
 	return db.Batch(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(dc.GetName()))
+		b := tx.Bucket([]byte(GetName(dc)))
 
 		for _, device := range devices {
 			d, err := json.Marshal(&device)
