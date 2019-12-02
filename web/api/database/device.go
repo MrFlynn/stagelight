@@ -27,8 +27,15 @@ type Device struct {
 }
 
 // MarshalJSON is the interface method for json.Marshall for the Device struct.
-func (d Device) MarshalJSON() ([]byte, error) {
-	return json.Marshal(d)
+func (d *Device) MarshalJSON() ([]byte, error) {
+	type Alias Device
+	aux := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(d),
+	}
+
+	return json.Marshal(aux)
 }
 
 // UnmarshalJSON is the interface method for json.Unmarshal for the Device struct.
