@@ -25,7 +25,7 @@ func singleDeviceHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	device, err := dbhandler.GetDevice(uint8(id))
+	device, err := dbhandler.Get("Devices", uint8(id))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Could not find device with ID %d", id), http.StatusNotFound)
 		return
@@ -38,9 +38,9 @@ func singleDeviceHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func allDeviceHandler(w http.ResponseWriter, r *http.Request) {
-	devices, err := dbhandler.GetAllDevices()
+	devices, err := dbhandler.GetAll("Devices")
 	if err != nil {
-		log.Println("Unable to get list of devices.")
+		log.Printf("Unable to get list of devices: %s", err)
 		http.Error(w, "Coud not get a list of devices", http.StatusInternalServerError)
 		return
 	}
@@ -48,12 +48,10 @@ func allDeviceHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	json.NewEncoder(w).Encode(devices)
 
-	log.Println("Sucessfully got a list of all devices.")
+	log.Println("Sucessfully got a list of all devices")
 }
 
 func updateDevices(w http.ResponseWriter, r *http.Request) {
-	var devices []database.Device
-
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Malformed JSON request", http.StatusBadRequest)
@@ -62,13 +60,7 @@ func updateDevices(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
-	err = json.Unmarshal(body, &devices)
-	if err != nil {
-		http.Error(w, "Could not process JSON request. Please check format", http.StatusBadRequest)
-		return
-	}
-
-	err = dbhandler.UpdateDevices(devices)
+	err = dbhandler.AddMultiple("Devices", body)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%s", err), http.StatusBadRequest)
 		return
@@ -77,8 +69,58 @@ func updateDevices(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+func getVotes(w http.ResponseWriter, r *http.Request) {
+	votes, err := dbhandler.Get("Votes", nil)
+	if err != nil {
+		log.Printf("Unable to get list of votes: %s", err)
+		http.Error(w, "Could not get votes", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json;charset=utf-8")
+	json.NewEncoder(w).Encode(votes)
+
+	log.Println("Sucessfully got list of votes")
+}
+
+func getColors(w http.ResponseWriter, r *http.Request) {
+	colors, err := dbhandler.GetAll("Colors")
+	if err != nil {
+		log.Printf("Unable to get list of colors: %s", err)
+		http.Error(w, "Could not get colors", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json;charset=utf-8")
+	json.NewEncoder(w).Encode(colors)
+
+	log.Println("Successfully got list of colors")
+}
+
+func updateColors(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Unable to parse request body with err: %s", err)
+		http.Error(w, "Malformed JSON request", http.StatusBadRequest)
+
+		return
+	}
+
+	err = dbhandler.AddMultiple("Colors", body)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%s", err), http.StatusBadRequest)
+		log.Printf("Controller unable to update colors: %s", err)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
 func writeWs(ws *websocket.Conn) {
-	d, err := dbhandler.GetAllDevices()
+	d, err := dbhandler.GetAll("Devices")
 	if err != nil {
 		log.Println("Could not get list of devices to send over websocket")
 	}
@@ -102,20 +144,29 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 }
 
-func createServer() *http.Server {
+func createServer(addr string, port uint, databasePath string) *http.Server {
 	log.Println("Creating new database connection...")
 
-	h := database.New("./example.db")
+	h := database.New(databasePath)
 	dbhandler = &h
 
 	log.Println("Creating new router...")
 
 	router := mux.NewRouter()
+
 	router.HandleFunc("/device/{id:[0-9]+}", singleDeviceHandler).Methods(http.MethodGet)
 	router.HandleFunc("/device/all", allDeviceHandler).Methods(http.MethodGet)
 	router.HandleFunc("/device/update", updateDevices).
 		Methods(http.MethodPost).
 		Headers("Content-Type", "application/json;charset=utf-8")
+
+	router.HandleFunc("/votes", getVotes).Methods(http.MethodGet)
+
+	router.HandleFunc("/colors", getColors).Methods(http.MethodGet)
+	router.HandleFunc("/colors", updateColors).
+		Methods(http.MethodPost).
+		Headers("Content-Type", "application/json;charset=utf-8")
+
 	router.HandleFunc("/ws", wsHandler).Methods(http.MethodGet)
 
 	// CORS settings.
@@ -125,7 +176,7 @@ func createServer() *http.Server {
 
 	srv := &http.Server{
 		Handler:      handlers.CORS(origins, methods, headers)(router),
-		Addr:         "127.0.0.1:8000",
+		Addr:         fmt.Sprintf("%s:%d", addr, port),
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 		IdleTimeout:  15 * time.Second,

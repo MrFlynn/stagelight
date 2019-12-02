@@ -1,0 +1,27 @@
+version: '3'
+services:
+  api:
+    build: ./api
+    ports:
+    - "8000"
+    volumes:
+    - api-data:/data:rw
+  web-builder:
+    build: ./stagelight-ui
+    volumes:
+    - web-build-output:/output/:rw
+  nginx:
+    image: nginx:alpine
+    command: nginx -c /etc/nginx-custom/nginx.conf
+    ports:
+      - "80:80"
+    depends_on:
+    - web-builder
+    volumes:
+    - ./nginx.conf:/etc/nginx-custom/nginx.conf:ro
+    - web-build-output:/opt/static/:ro
+volumes:
+  api-data:
+    driver: local
+  web-build-output:
+    driver: local

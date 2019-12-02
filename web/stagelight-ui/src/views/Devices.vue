@@ -54,7 +54,7 @@ export default {
     },
     created () {
         axios.get(
-            'http://localhost:8000/device/all'
+            `${process.env.VUE_APP_API_BASE_URL}/device/all`
         ).then(response => {
             this.devices = response.data
         })
@@ -79,13 +79,9 @@ export default {
         },
         submitData: function () {
             axios.post(
-                'http://localhost:8000/device/update',
+                `${process.env.API_BASE_URL}/device/update`,
                 this.devices
-            ).then(r => {
-                console.log(r)
-            }).catch(e => {
-                console.log(e)
-            })
+            )
         }
     }
 }
