@@ -26,8 +26,8 @@ type Device struct {
 	Colors []uint32 `json:"colors"`
 }
 
-// MarshallJSON is the interface method for json.Marshall for the Device struct.
-func (d Device) MarshallJSON() ([]byte, error) {
+// MarshalJSON is the interface method for json.Marshall for the Device struct.
+func (d Device) MarshalJSON() ([]byte, error) {
 	return json.Marshal(d)
 }
 
@@ -180,7 +180,7 @@ func (dc *DeviceController) AddMultiple(db *bolt.DB, devs []byte) error {
 				return err
 			}
 
-			log.Printf("Sucessfully updated device with ID %d", device.ID)
+			log.Printf("Successfully updated device with ID %d", device.ID)
 		}
 
 		return nil
