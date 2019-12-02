@@ -9,7 +9,7 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-var subControllers = []Controller{&DeviceController{}, &VoteController{}}
+var subControllers = []Controller{&DeviceController{}, &VoteController{}, &ColorController{}}
 
 // Controller interface provides a list of methods that a controller should implement.
 type Controller interface {

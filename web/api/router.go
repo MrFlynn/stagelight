@@ -83,6 +83,42 @@ func getVotes(w http.ResponseWriter, r *http.Request) {
 	log.Println("Sucessfully got list of votes")
 }
 
+func getColors(w http.ResponseWriter, r *http.Request) {
+	colors, err := dbhandler.GetAll("Colors")
+	if err != nil {
+		log.Printf("Unable to get list of colors: %s", err)
+		http.Error(w, "Could not get colors", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json;charset=utf-8")
+	json.NewEncoder(w).Encode(colors)
+
+	log.Println("Successfully got list of colors")
+}
+
+func updateColors(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Unable to parse request body with err: %s", err)
+		http.Error(w, "Malformed JSON request", http.StatusBadRequest)
+
+		return
+	}
+
+	err = dbhandler.AddMultiple("Colors", body)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%s", err), http.StatusBadRequest)
+		log.Printf("Controller unable to update colors: %s", err)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
 func writeWs(ws *websocket.Conn) {
 	d, err := dbhandler.GetAll("Devices")
 	if err != nil {
@@ -117,12 +153,20 @@ func createServer() *http.Server {
 	log.Println("Creating new router...")
 
 	router := mux.NewRouter()
+
 	router.HandleFunc("/device/{id:[0-9]+}", singleDeviceHandler).Methods(http.MethodGet)
 	router.HandleFunc("/device/all", allDeviceHandler).Methods(http.MethodGet)
 	router.HandleFunc("/device/update", updateDevices).
 		Methods(http.MethodPost).
 		Headers("Content-Type", "application/json;charset=utf-8")
+
 	router.HandleFunc("/votes", getVotes).Methods(http.MethodGet)
+
+	router.HandleFunc("/colors", getColors).Methods(http.MethodGet)
+	router.HandleFunc("/colors", updateColors).
+		Methods(http.MethodPost).
+		Headers("Content-Type", "application/json;charset=utf-8")
+
 	router.HandleFunc("/ws", wsHandler).Methods(http.MethodGet)
 
 	// CORS settings.
