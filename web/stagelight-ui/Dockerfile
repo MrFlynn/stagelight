@@ -1,8 +1,8 @@
 FROM node:latest
 
 # Create workspace and volumes.
-VOLUME /output
 RUN mkdir /workspace
+VOLUME /output
 
 # Install dependencies and build static copy of site.
 WORKDIR /workspace
@@ -10,5 +10,5 @@ COPY . .
 RUN npm install
 RUN npm run build
 
-# Copy the contents of the dist folder to the output folder.
-COPY /workspace/dist /output
+# Copy output to new directory
+CMD ["cp", "-a", "/workspace/dist/.", "/output"]

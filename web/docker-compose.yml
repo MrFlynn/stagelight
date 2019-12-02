@@ -9,7 +9,7 @@ services:
   web-builder:
     build: ./stagelight-ui
     volumes:
-    - web-build-output:/output:rw
+    - web-build-output:/output/:rw
   nginx:
     image: nginx:alpine
     command: nginx -c /etc/nginx-custom/nginx.conf
@@ -19,6 +19,7 @@ services:
     - web-builder
     volumes:
     - ./nginx.conf:/etc/nginx-custom/nginx.conf:ro
+    - web-build-output:/opt/static/:ro
 volumes:
   api-data:
     driver: local
