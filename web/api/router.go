@@ -144,10 +144,10 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 }
 
-func createServer() *http.Server {
+func createServer(addr string, port uint, databasePath string) *http.Server {
 	log.Println("Creating new database connection...")
 
-	h := database.New("./example.db")
+	h := database.New(databasePath)
 	dbhandler = &h
 
 	log.Println("Creating new router...")
@@ -176,7 +176,7 @@ func createServer() *http.Server {
 
 	srv := &http.Server{
 		Handler:      handlers.CORS(origins, methods, headers)(router),
-		Addr:         "127.0.0.1:8000",
+		Addr:         fmt.Sprintf("%s:%d", addr, port),
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 		IdleTimeout:  15 * time.Second,
