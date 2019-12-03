@@ -125,7 +125,7 @@ func updateColors(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func wsHandler(w http.ResponseWriter, r *http.Request) {
+func wsBridgeHandler(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("Could not upgrade connection from %s to websocket", r.RemoteAddr)
@@ -137,6 +137,26 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			// Only send updates as they are available.
 			payload := <-deviceUpdateStream
 			ws.WriteJSON(payload)
+		}
+	}()
+}
+
+func wsVoteHandler(w http.ResponseWriter, r *http.Request) {
+	ws, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("Could not upgrade connection from %s to websocket", r.RemoteAddr)
+		return
+	}
+
+	go func() {
+		for range time.Tick(2 * time.Second) {
+			votes, err := dbhandler.Get("Votes", nil)
+			if err != nil {
+				log.Printf("Could not get list of votes.")
+				continue
+			}
+
+			ws.WriteJSON(votes)
 		}
 	}()
 }
@@ -164,7 +184,8 @@ func createServer(addr string, port uint, databasePath string) *http.Server {
 		Methods(http.MethodPost).
 		Headers("Content-Type", "application/json;charset=utf-8")
 
-	router.HandleFunc("/ws", wsHandler).Methods(http.MethodGet)
+	router.HandleFunc("/ws/bridge", wsBridgeHandler).Methods(http.MethodGet)
+	router.HandleFunc("/ws/votes", wsVoteHandler).Methods(http.MethodGet)
 
 	// CORS settings.
 	origins := handlers.AllowedOrigins([]string{"*"})
