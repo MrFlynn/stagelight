@@ -1,0 +1,6 @@
+[submodule "band/libraries/RadioHead"]
+	path = band/libraries/RadioHead
+	url = https://github.com/MrFlynn/RadioHead.git
+[submodule "band/libraries/Adafruit_NeoPixel"]
+	path = band/libraries/Adafruit_NeoPixel
+	url = https://github.com/adafruit/Adafruit_NeoPixel.git
