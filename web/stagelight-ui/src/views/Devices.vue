@@ -2,7 +2,7 @@
     <div>
         <div class="select">
             <select v-model="selected.color">
-                <option v-for="color in colorSchemes" :key="color">{{ color.name }}</option>
+                <option v-for="color in colorSchemes" :key="color.id" :value="color.id">{{ color.name }}</option>
             </select>
         </div>
         <div class="select">
@@ -98,7 +98,7 @@ export default {
             var i = 0
             this.devices.forEach(v => {
                 if (this.selected.devices[i] === v.id) {
-                    v.colors[0] = this.defaultColors[this.selected.color]
+                    v.color = this.selected.color
                     v.mode = this.modes[this.selected.mode]
 
                     i++
