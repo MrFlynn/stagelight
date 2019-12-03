@@ -24,6 +24,24 @@ type Controller interface {
 	AddMultiple(*bolt.DB, []byte) error
 }
 
+// GetName gets the default bucket name (or tableName) of the given struct.
+func GetName(c Controller) string {
+	v := reflect.ValueOf(c)
+	f := v.Elem().FieldByName("tableName")
+
+	if f.IsValid() {
+		tableName := f.String()
+		if tableName == "" {
+			tf, _ := reflect.TypeOf(c).Elem().FieldByName("tableName")
+			return tf.Tag.Get("default")
+		}
+
+		return tableName
+	}
+
+	return ""
+}
+
 // DBHandler acts as an interface for bbolt.
 type DBHandler struct {
 	db          *bolt.DB
@@ -99,20 +117,33 @@ func (h *DBHandler) AddMultiple(controller string, set []byte) error {
 	return fmt.Errorf("Could not find controller with name %s", controller)
 }
 
-// GetName gets the default bucket name (or tableName) of the given struct.
-func GetName(c Controller) string {
-	v := reflect.ValueOf(c)
-	f := v.Elem().FieldByName("tableName")
+// BridgePayload contains the information required by the bridge
+// to send to each of the bands.
+type BridgePayload struct {
+	ID            uint8
+	Mode          Mode
+	ColorSequence []uint32
+}
 
-	if f.IsValid() {
-		tableName := f.String()
-		if tableName == "" {
-			tf, _ := reflect.TypeOf(c).Elem().FieldByName("tableName")
-			return tf.Tag.Get("default")
+// CreatePayload creates a communication payload for the bridge.
+func (h *DBHandler) CreatePayload(devices []Device) []BridgePayload {
+	completePayload := []BridgePayload{}
+
+	for _, device := range devices {
+		color, err := h.Get("Colors", device.ColorScheme)
+		if err != nil {
+			log.Printf("Could not get color with ID %d", device.ColorScheme)
 		}
 
-		return tableName
+		scheme := color.(*Color)
+		payload := BridgePayload{
+			ID:            device.ID,
+			Mode:          device.Mode,
+			ColorSequence: scheme.Sequence,
+		}
+
+		completePayload = append(completePayload, payload)
 	}
 
-	return ""
+	return completePayload
 }

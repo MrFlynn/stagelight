@@ -135,8 +135,8 @@ func wsBridgeHandler(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		for {
 			// Only send updates as they are available.
-			payload := <-deviceUpdateStream
-			ws.WriteJSON(payload)
+			devices := <-deviceUpdateStream
+			ws.WriteJSON(dbhandler.CreatePayload(devices))
 		}
 	}()
 }
