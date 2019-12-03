@@ -49,7 +49,8 @@ void LedTask::nextTask() {
 }
 
 void LedTask::importStream(uint8_t stream[], uint8_t len) {
-    for (int i = 1; i < len; i += 3) {
+    // Ignore the first two bytes are they are metadata.
+    for (int i = 2; i < len; i += 3) {
         uint8_t *color = new uint8_t[3];
         color[0] = stream[i]; color[1] = stream[i + 1]; color[2] = stream[i + 2];
         
