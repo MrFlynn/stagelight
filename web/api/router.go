@@ -17,6 +17,7 @@ import (
 
 var dbhandler *database.DBHandler
 var upgrader = websocket.Upgrader{}
+var deviceUpdateStream = make(chan []database.Device, 10)
 
 func singleDeviceHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(mux.Vars(r)["id"], 10, 8)
@@ -65,6 +66,11 @@ func updateDevices(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("%s", err), http.StatusBadRequest)
 		return
 	}
+
+	// If the previous if statement didn't error, we know this should be error free.
+	devicesPayload := []database.Device{}
+	json.Unmarshal(body, &devicesPayload)
+	deviceUpdateStream <- devicesPayload
 
 	w.WriteHeader(http.StatusCreated)
 }
@@ -119,15 +125,6 @@ func updateColors(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func writeWs(ws *websocket.Conn) {
-	d, err := dbhandler.GetAll("Devices")
-	if err != nil {
-		log.Println("Could not get list of devices to send over websocket")
-	}
-
-	ws.WriteJSON(d)
-}
-
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -136,10 +133,10 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
-		writeWs(ws)
-
-		for range time.Tick(30 * time.Second) {
-			writeWs(ws)
+		for {
+			// Only send updates as they are available.
+			payload := <-deviceUpdateStream
+			ws.WriteJSON(payload)
 		}
 	}()
 }
