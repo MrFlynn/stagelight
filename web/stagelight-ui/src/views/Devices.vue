@@ -101,11 +101,11 @@ export default {
 
             this.devices.forEach(v => {
                 if (this.selected.devices[i] === v.id) {
-                    if (typeof newColor === undefined) {
+                    if (typeof newColor !== "undefined") {
                         v.color = newColor
                     }
 
-                    if (typeof newMode === undefined) {
+                    if (typeof newMode !== "undefined") {
                         v.mode = newMode
                     }
 
