@@ -1,34 +1,39 @@
 <template>
     <div>
-        <table class="primary">
+        <div class="select">
+            <select v-model.lazy="selected.color">
+                <option v-for="color in defaultColors" :key="color">{{ nameFromColor(color) }}</option>
+            </select>
+        </div>
+        <div class="select">
+            <select v-model="selected.mode">
+                <option v-for="mode in modes" :key="mode">{{ nameFromModeID(mode) }}</option>
+            </select>
+        </div>
+        <button class="button is-primary" v-on:click="applyDeviceChanges">Apply</button>
+        <table class="table is-striped">
             <thead>
                 <tr>
-                    <th>Device ID</th>
+                    <th>Select</th>
+                    <th>ID</th>
                     <th>Color</th>
                     <th>Mode</th>
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="device in devices" v-bind:key="device.id">
+                <tr v-for="device in devices" :key="device.id">
+                    <td>
+                        <label class="checkbox">
+                            <input type="checkbox" :value="device.id" v-model="selected.devices">
+                        </label>
+                    </td>
                     <td>{{ device.id }}</td>
-                    <td>
-                        <select v-model="device.colors[0]">
-                            <option v-for="opt in getOtherItems(defaultColors, nameFromColor(device.colors[0]))" :key="opt" :value="defaultColors[opt]">
-                                {{ opt }}
-                            </option>
-                        </select>
-                    </td>
-                    <td>
-                        <select v-model="device.mode">
-                            <option v-for="opt in getOtherItems(modes, nameFromModeID(device.mode))" :key="opt" :value="modes[opt]">
-                                {{ opt }}
-                            </option>
-                        </select>
-                    </td>
+                    <td v-bind:value="device.colors">{{ nameFromColor(device.colors[0]) }}</td>
+                    <td v-bind:value="device.mode">{{ nameFromModeID(device.mode) }}</td>
                 </tr>
             </tbody>
         </table>
-        <button v-on:click="submitData">Submit</button>
+        <button class="button is-primary" v-on:click="submitData">Submit</button>
     </div>
 </template>
 
@@ -49,6 +54,11 @@ export default {
             modes: {
                 'Normal': 0,
                 'Vote': 1
+            },
+            selected: {
+                devices: [],
+                color: 'Red',
+                mode: 'Normal'
             }
         }
     },
@@ -82,6 +92,17 @@ export default {
                 `${process.env.VUE_APP_API_BASE_URL}/device/update`,
                 this.devices
             )
+        },
+        applyDeviceChanges: function () {
+            var i = 0
+            this.devices.forEach(v => {
+                if (this.selected.devices[i] === v.id) {
+                    v.colors[0] = this.defaultColors[this.selected.color]
+                    v.mode = this.modes[this.selected.mode]
+
+                    i++
+                }
+            })
         }
     }
 }
