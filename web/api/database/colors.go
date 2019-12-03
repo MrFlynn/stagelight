@@ -11,7 +11,14 @@ import (
 // Color contains color information for the bands.
 type Color struct {
 	ID       uint8    `json:"id"`
+	Name     string   `json:"name"`
 	Sequence []uint32 `json:"sequence"`
+}
+
+var defaultColor = Color{
+	ID:       0,
+	Name:     "Default (Off)",
+	Sequence: []uint32{0},
 }
 
 func (c Color) size() (int, bool) {
@@ -21,7 +28,10 @@ func (c Color) size() (int, bool) {
 	// total number of bytes.
 	calculatedSize := len(c.Sequence) * 3
 
-	return calculatedSize, calculatedSize < 128
+	return calculatedSize, calculatedSize < 129 // Allows for 43 colors in the sequence.
+	// The limitation of this is to prevent overflow of the packet radio buffer. Each
+	// transmission can only hold up to 221 bytes including the frame header. This gives plenty
+	// of room for future functionality.
 }
 
 // MarshalJSON implements the JSON interface for Color.
@@ -75,6 +85,12 @@ func (cc *ColorController) Initialize(db *bolt.DB) error {
 
 		return nil
 	})
+
+	b, _ := json.Marshal(defaultColor) // This should not error.
+	err = cc.Add(db, b)
+	if err != nil {
+		return fmt.Errorf("Could not initialize database with default color scheme")
+	}
 
 	return err
 }
