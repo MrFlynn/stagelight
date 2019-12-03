@@ -1,13 +1,7 @@
 <template>
-    <div id="app">
-      <div class="flex">
-        <div class="three-fourth">
-          <router-view/>
-        </div>
-      </div>
-    </div>
+  <router-view/>
 </template>
 
 <style lang="sass">
-  @import "picnic"
+  @import "bulma"
 </style>
