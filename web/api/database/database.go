@@ -120,9 +120,9 @@ func (h *DBHandler) AddMultiple(controller string, set []byte) error {
 // BridgePayload contains the information required by the bridge
 // to send to each of the bands.
 type BridgePayload struct {
-	ID            uint8
-	Mode          Mode
-	ColorSequence []uint32
+	ID            uint8    `json:"id"`
+	Mode          Mode     `json:"mode"`
+	ColorSequence []uint32 `json:"colorsequence"`
 }
 
 // CreatePayload creates a communication payload for the bridge.
