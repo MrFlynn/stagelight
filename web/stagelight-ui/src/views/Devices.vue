@@ -52,8 +52,8 @@ export default {
             },
             selected: {
                 devices: [],
-                color: 'Red',
-                mode: 'Normal'
+                color: undefined,
+                mode: undefined
             }
         }
     },
@@ -96,10 +96,18 @@ export default {
         },
         applyDeviceChanges: function () {
             var i = 0
+            var newColor = this.selected.color
+            var newMode = this.modes[this.selected.mode]
+
             this.devices.forEach(v => {
                 if (this.selected.devices[i] === v.id) {
-                    v.color = this.selected.color
-                    v.mode = this.modes[this.selected.mode]
+                    if (typeof newColor === undefined) {
+                        v.color = newColor
+                    }
+
+                    if (typeof newMode === undefined) {
+                        v.mode = newMode
+                    }
 
                     i++
                 }
