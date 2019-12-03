@@ -1,8 +1,8 @@
 <template>
     <div>
         <div class="select">
-            <select v-model.lazy="selected.color">
-                <option v-for="color in defaultColors" :key="color">{{ nameFromColor(color) }}</option>
+            <select v-model="selected.color">
+                <option v-for="color in colorSchemes" :key="color">{{ color.name }}</option>
             </select>
         </div>
         <div class="select">
@@ -28,7 +28,7 @@
                         </label>
                     </td>
                     <td>{{ device.id }}</td>
-                    <td v-bind:value="device.colors">{{ nameFromColor(device.colors[0]) }}</td>
+                    <td v-bind:value="device.color">{{ getColorName(device.color) }}</td>
                     <td v-bind:value="device.mode">{{ nameFromModeID(device.mode) }}</td>
                 </tr>
             </tbody>
@@ -45,12 +45,7 @@ export default {
     data () {
         return {
             devices: [],
-            defaultColors: {
-                'Red': 16711680,
-                'Green': 65280,
-                'Blue': 255,
-                'Off': 0
-            },
+            colorSchemes: [],
             modes: {
                 'Normal': 0,
                 'Vote': 1
@@ -68,6 +63,12 @@ export default {
         ).then(response => {
             this.devices = response.data
         })
+
+        axios.get(
+            `${process.env.VUE_APP_API_BASE_URL}/colors`
+        ).then(response => {
+            this.colorSchemes = response.data
+        })
     },
     methods: {
         swap: function (obj) {
@@ -75,17 +76,17 @@ export default {
             Object.assign(output, ...Object.entries(obj).map(([a, b]) => ({[b]: a})))
             return output
         },
-        nameFromColor: function (color) {
-            return this.swap(this.defaultColors)[color]
-        },
         nameFromModeID: function (mode) {
             return this.swap(this.modes)[mode]
         },
-        getOtherItems: function(obj, first) {
-            var keys = Object.keys(obj).filter(e => (e != first))
-            keys.unshift(first)
+        getColorName: function (id) {
+            for (var i = 0; i < this.colorSchemes.length; i++) {
+                if (this.colorSchemes[i].id === id) {
+                    return this.colorSchemes[i].name
+                }
+            }
 
-            return keys
+            return "Unknown"
         },
         submitData: function () {
             axios.post(
