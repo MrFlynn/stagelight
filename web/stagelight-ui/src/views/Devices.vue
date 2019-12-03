@@ -79,7 +79,7 @@ export default {
         },
         submitData: function () {
             axios.post(
-                `${process.env.API_BASE_URL}/device/update`,
+                `${process.env.VUE_APP_API_BASE_URL}/device/update`,
                 this.devices
             )
         }
