@@ -21,9 +21,9 @@ const (
 
 // Device contains device-specific information about individual bands.
 type Device struct {
-	ID     uint8    `json:"id"`
-	Mode   Mode     `json:"mode"`
-	Colors []uint32 `json:"colors"`
+	ID          uint8 `json:"id"`
+	Mode        Mode  `json:"mode"`
+	ColorScheme uint8 `json:"color"`
 }
 
 // MarshalJSON is the interface method for json.Marshall for the Device struct.

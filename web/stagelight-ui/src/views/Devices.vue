@@ -1,34 +1,39 @@
 <template>
     <div>
-        <table class="primary">
+        <div class="select">
+            <select v-model="selected.color">
+                <option v-for="color in colorSchemes" :key="color.id" :value="color.id">{{ color.name }}</option>
+            </select>
+        </div>
+        <div class="select">
+            <select v-model="selected.mode">
+                <option v-for="mode in modes" :key="mode">{{ nameFromModeID(mode) }}</option>
+            </select>
+        </div>
+        <button class="button is-primary" v-on:click="applyDeviceChanges">Apply</button>
+        <table class="table is-striped">
             <thead>
                 <tr>
-                    <th>Device ID</th>
+                    <th>Select</th>
+                    <th>ID</th>
                     <th>Color</th>
                     <th>Mode</th>
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="device in devices" v-bind:key="device.id">
+                <tr v-for="device in devices" :key="device.id">
+                    <td>
+                        <label class="checkbox">
+                            <input type="checkbox" :value="device.id" v-model="selected.devices">
+                        </label>
+                    </td>
                     <td>{{ device.id }}</td>
-                    <td>
-                        <select v-model="device.colors[0]">
-                            <option v-for="opt in getOtherItems(defaultColors, nameFromColor(device.colors[0]))" :key="opt" :value="defaultColors[opt]">
-                                {{ opt }}
-                            </option>
-                        </select>
-                    </td>
-                    <td>
-                        <select v-model="device.mode">
-                            <option v-for="opt in getOtherItems(modes, nameFromModeID(device.mode))" :key="opt" :value="modes[opt]">
-                                {{ opt }}
-                            </option>
-                        </select>
-                    </td>
+                    <td v-bind:value="device.color">{{ getColorName(device.color) }}</td>
+                    <td v-bind:value="device.mode">{{ nameFromModeID(device.mode) }}</td>
                 </tr>
             </tbody>
         </table>
-        <button v-on:click="submitData">Submit</button>
+        <button class="button is-primary" v-on:click="submitData">Submit</button>
     </div>
 </template>
 
@@ -40,15 +45,15 @@ export default {
     data () {
         return {
             devices: [],
-            defaultColors: {
-                'Red': 16711680,
-                'Green': 65280,
-                'Blue': 255,
-                'Off': 0
-            },
+            colorSchemes: [],
             modes: {
                 'Normal': 0,
                 'Vote': 1
+            },
+            selected: {
+                devices: [],
+                color: undefined,
+                mode: undefined
             }
         }
     },
@@ -58,6 +63,12 @@ export default {
         ).then(response => {
             this.devices = response.data
         })
+
+        axios.get(
+            `${process.env.VUE_APP_API_BASE_URL}/colors`
+        ).then(response => {
+            this.colorSchemes = response.data
+        })
     },
     methods: {
         swap: function (obj) {
@@ -65,23 +76,42 @@ export default {
             Object.assign(output, ...Object.entries(obj).map(([a, b]) => ({[b]: a})))
             return output
         },
-        nameFromColor: function (color) {
-            return this.swap(this.defaultColors)[color]
-        },
         nameFromModeID: function (mode) {
             return this.swap(this.modes)[mode]
         },
-        getOtherItems: function(obj, first) {
-            var keys = Object.keys(obj).filter(e => (e != first))
-            keys.unshift(first)
+        getColorName: function (id) {
+            for (var i = 0; i < this.colorSchemes.length; i++) {
+                if (this.colorSchemes[i].id === id) {
+                    return this.colorSchemes[i].name
+                }
+            }
 
-            return keys
+            return "Unknown"
         },
         submitData: function () {
             axios.post(
-                `${process.env.API_BASE_URL}/device/update`,
+                `${process.env.VUE_APP_API_BASE_URL}/device/update`,
                 this.devices
             )
+        },
+        applyDeviceChanges: function () {
+            var i = 0
+            var newColor = this.selected.color
+            var newMode = this.modes[this.selected.mode]
+
+            this.devices.forEach(v => {
+                if (this.selected.devices[i] === v.id) {
+                    if (typeof newColor !== "undefined") {
+                        v.color = newColor
+                    }
+
+                    if (typeof newMode !== "undefined") {
+                        v.mode = newMode
+                    }
+
+                    i++
+                }
+            })
         }
     }
 }

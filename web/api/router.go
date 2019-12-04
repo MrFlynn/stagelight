@@ -17,6 +17,7 @@ import (
 
 var dbhandler *database.DBHandler
 var upgrader = websocket.Upgrader{}
+var deviceUpdateStream = make(chan []database.Device, 10)
 
 func singleDeviceHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(mux.Vars(r)["id"], 10, 8)
@@ -65,6 +66,11 @@ func updateDevices(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("%s", err), http.StatusBadRequest)
 		return
 	}
+
+	// If the previous if statement didn't error, we know this should be error free.
+	devicesPayload := []database.Device{}
+	json.Unmarshal(body, &devicesPayload)
+	deviceUpdateStream <- devicesPayload
 
 	w.WriteHeader(http.StatusCreated)
 }
@@ -119,16 +125,7 @@ func updateColors(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func writeWs(ws *websocket.Conn) {
-	d, err := dbhandler.GetAll("Devices")
-	if err != nil {
-		log.Println("Could not get list of devices to send over websocket")
-	}
-
-	ws.WriteJSON(d)
-}
-
-func wsHandler(w http.ResponseWriter, r *http.Request) {
+func wsBridgeHandler(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("Could not upgrade connection from %s to websocket", r.RemoteAddr)
@@ -136,10 +133,30 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
-		writeWs(ws)
+		for {
+			// Only send updates as they are available.
+			devices := <-deviceUpdateStream
+			ws.WriteJSON(dbhandler.CreatePayload(devices))
+		}
+	}()
+}
 
-		for range time.Tick(30 * time.Second) {
-			writeWs(ws)
+func wsVoteHandler(w http.ResponseWriter, r *http.Request) {
+	ws, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("Could not upgrade connection from %s to websocket", r.RemoteAddr)
+		return
+	}
+
+	go func() {
+		for range time.Tick(2 * time.Second) {
+			votes, err := dbhandler.Get("Votes", nil)
+			if err != nil {
+				log.Printf("Could not get list of votes.")
+				continue
+			}
+
+			ws.WriteJSON(votes)
 		}
 	}()
 }
@@ -167,7 +184,8 @@ func createServer(addr string, port uint, databasePath string) *http.Server {
 		Methods(http.MethodPost).
 		Headers("Content-Type", "application/json;charset=utf-8")
 
-	router.HandleFunc("/ws", wsHandler).Methods(http.MethodGet)
+	router.HandleFunc("/ws/bridge", wsBridgeHandler).Methods(http.MethodGet)
+	router.HandleFunc("/ws/votes", wsVoteHandler).Methods(http.MethodGet)
 
 	// CORS settings.
 	origins := handlers.AllowedOrigins([]string{"*"})
