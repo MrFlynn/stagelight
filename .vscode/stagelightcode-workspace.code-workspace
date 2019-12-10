@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "../",
+			"name": "stagelight"
+		},
+		{
+			"path": "../web/api/",
+			"name": "api"
+		},
+		{
+			"path": "../web/stagelight-ui",
+			"name": "ui"
+		}
+	],
+	"settings": {}
+}
