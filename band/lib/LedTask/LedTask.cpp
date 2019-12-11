@@ -2,7 +2,7 @@
 
 Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
-LedTask::LedTask() : taskPeriod(500), size(0), idx(0), timeElapsed(0) {
+LedTask::LedTask() : taskPeriod(500), timeElapsed(0), size(0), idx(0) {
     this->colors = new uint8_t*[42];
     for (int i = 0; i < 42; i++) {
         this->colors[i] = new uint8_t[3];

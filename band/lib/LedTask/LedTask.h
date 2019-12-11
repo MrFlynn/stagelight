@@ -6,7 +6,7 @@
 
 #include <Adafruit_NeoPixel.h>
 
-#include "Task.h"
+#include <Task.h>
 
 class LedTask : public Task {
     private:    
@@ -15,12 +15,12 @@ class LedTask : public Task {
             NEXT
         } state;
 
+        int taskPeriod;
+        int timeElapsed;
+
         uint8_t **colors;
         uint8_t size;
         uint8_t idx;
-
-        int taskPeriod;
-        int timeElapsed;
     public:
         LedTask();
         void nextTask();
