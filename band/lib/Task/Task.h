@@ -10,6 +10,7 @@ class Task {
         virtual int period() = 0;
         virtual int elapsed() = 0;
         virtual void setElapsed(int) = 0;
+        virtual uint8_t getValue() = 0;
 };
 
 #endif
