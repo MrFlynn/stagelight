@@ -1,17 +1,19 @@
 #include "LedTask.h"
 
-Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
+LedTask::LedTask(uint8_t pin, uint8_t count) : strip(Adafruit_NeoPixel(count, pin, NEO_GRB + NEO_KHZ800)),
+    taskPeriod(500), 
+    timeElapsed(0), 
+    size(0),
+    idx(0) {
 
-LedTask::LedTask() : taskPeriod(500), timeElapsed(0), size(0), idx(0) {
     this->colors = new uint8_t*[42];
     for (int i = 0; i < 42; i++) {
         this->colors[i] = new uint8_t[3];
     }
 
-    strip.begin();
-    
-    strip.setBrightness(64);
-    strip.show();
+    this->strip.begin();
+    this->strip.setBrightness(64);
+    this->strip.show();
 }
 
 void LedTask::nextTask() {
@@ -32,8 +34,8 @@ void LedTask::nextTask() {
             }
 
             uint8_t *color = this->colors[this->idx];
-            strip.setPixelColor(0, color[0], color[1], color[2]);
-            strip.show();
+            this->strip.setPixelColor(0, color[0], color[1], color[2]);
+            this->strip.show();
 
             this->idx++;
             if (this->idx >= this->size) {
@@ -71,4 +73,8 @@ int LedTask::elapsed() {
 
 void LedTask::setElapsed(int val) {
     this->timeElapsed = val;
+}
+
+uint8_t LedTask::getValue() {
+    return 0;
 }
