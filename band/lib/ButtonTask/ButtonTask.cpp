@@ -1,11 +1,10 @@
 #include "ButtonTask.h"
 
-ButtonTask::ButtonTask(int buttonPositive, int buttonNegative) : on(false),
-    buttonPositive(buttonPositive),
+ButtonTask::ButtonTask(int buttonPositive, int buttonNegative) : buttonPositive(buttonPositive),
     buttonNegative(buttonNegative),
-    value(0),
-    taskPeriod(50),
-    elapsedTime(0) {
+    on(false),
+    value(NONE),
+    taskPeriod(50) {
 
     pinMode(buttonPositive, INPUT_PULLUP);
     pinMode(buttonNegative, INPUT_PULLUP);
@@ -21,10 +20,11 @@ void ButtonTask::nextTask() {
                 this->state = HOLDNEG;
             } else {
                 this->state = WAIT;
+            }
             
             break;
         case HOLDPOS:
-            if digitalRead(buttonPositive) {
+            if (digitalRead(buttonPositive)) {
                 this->state = WAIT;
             } else {
                 this->state = HOLDPOS;
@@ -32,7 +32,7 @@ void ButtonTask::nextTask() {
 
             break;
         case HOLDNEG:
-            if digitalWrite(buttonNegative) {
+            if (digitalRead(buttonNegative)) {
                 this->state = WAIT;
             } else {
                 this->state = HOLDNEG;
@@ -62,8 +62,16 @@ void ButtonTask::nextTask() {
     }
 }
 
-void ButtonTask::importStream(uint8_t[] stream, uint8_t len) {
-    return;
+void ButtonTask::importStream(uint8_t stream[], uint8_t len) {
+    if (!len) {
+        return;
+    }
+
+    if (stream[1] == 2) {
+        this->on = true;
+    } else {
+        this->on = false;
+    }
 }
 
 int ButtonTask::period() {
@@ -71,11 +79,11 @@ int ButtonTask::period() {
 }
 
 int ButtonTask::elapsed() {
-    return this->elapsedTime;
+    return this->timeElapsed;
 }
 
 void ButtonTask::setElapsed(int val) {
-    this->elapsedTime = val;
+    this->timeElapsed = val;
 }
 
 uint8_t ButtonTask::getValue() {

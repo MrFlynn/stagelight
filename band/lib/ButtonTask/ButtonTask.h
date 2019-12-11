@@ -1,9 +1,15 @@
 #ifndef __BUTTON_TASK_H__
 #define __BUTTON_TASK_H__
 
-#include "Task.h"
+#include <Task.h>
 
 class ButtonTask : public Task {
+    public:
+        enum VoteValue {
+            NONE,
+            POSITIVE,
+            NEGATIVE
+        };
     private:
         enum states {
             INIT,
@@ -12,27 +18,22 @@ class ButtonTask : public Task {
             HOLDNEG
         } state;
 
-        bool on;
-        VoteValue value;
-
         int buttonPositive;
         int buttonNegative;
+
+        bool on;
+        VoteValue value;
 
         int taskPeriod;
         int timeElapsed;
     public:
-        enum VoteValue {
-            NONE,
-            POSITIVE,
-            NEGATIVE
-        };
-
-        ButtonTask();
+        ButtonTask(int, int);
         void nextTask();
         void importStream(uint8_t[], uint8_t);
         int period();
         int elapsed();
         void setElapsed(int);
+        uint8_t getValue();
 };
 
 #endif

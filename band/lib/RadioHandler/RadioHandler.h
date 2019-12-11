@@ -6,7 +6,7 @@
 #include <SPI.h>
 
 // Setup packet radio.
-#define __AVR_ATmega1284__
+// #define __AVR_ATmega1284__
 
 enum RadioCommand {
     NOPCOMMAND,
@@ -17,7 +17,8 @@ enum RadioCommand {
 enum ModeCommand {
     NOPMODE,
     CHANGECOLOR,
-    VOTESTATUS
+    VOTEENABLE,
+    VOTEDISABLE
 };
 
 struct radioresult_t {
@@ -26,7 +27,6 @@ struct radioresult_t {
     ModeCommand mode;
     uint8_t *buf, *len, *from;
 };
-    
 
 class RadioHandler {
     private:
