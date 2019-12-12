@@ -1,40 +1,50 @@
 <template>
-    <div>
-        <div class="select">
-            <select v-model="selected.color">
-                <option v-for="color in colorSchemes" :key="color.id" :value="color.id">{{ color.name }}</option>
-            </select>
+    <section class="section">
+        <div class="container">
+            <nav class="level">
+                <div class="level-left">
+                    <div class="level-item select">
+                        <select v-model="selected.color">
+                            <option v-for="color in colorSchemes" :key="color.id" :value="color.id">{{ color.name }}</option>
+                        </select>
+                    </div>
+                    <div class="level-item select">
+                        <select v-model="selected.mode">
+                            <option v-for="mode in modes" :key="mode">{{ nameFromModeID(mode) }}</option>
+                        </select>
+                    </div>
+                    <button class="button is-primary" v-on:click="applyDeviceChanges">Apply</button>
+                </div>
+                <div class="level-right">
+                    <button class="button is-primary" v-on:click="submitData">Submit Changes</button>
+                </div>
+            </nav>
+            <div class="box">
+                <table class="table is-striped is-fullwidth">
+                    <thead>
+                        <tr>
+                            <th>Select</th>
+                            <th>ID</th>
+                            <th>Color</th>
+                            <th>Mode</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="device in devices" :key="device.id">
+                            <td>
+                                <label class="checkbox">
+                                    <input type="checkbox" :value="device.id" v-model="selected.devices">
+                                </label>
+                            </td>
+                            <td>{{ device.id }}</td>
+                            <td v-bind:value="device.color">{{ getColorName(device.color) }}</td>
+                            <td v-bind:value="device.mode">{{ nameFromModeID(device.mode) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <div class="select">
-            <select v-model="selected.mode">
-                <option v-for="mode in modes" :key="mode">{{ nameFromModeID(mode) }}</option>
-            </select>
-        </div>
-        <button class="button is-primary" v-on:click="applyDeviceChanges">Apply</button>
-        <table class="table is-striped">
-            <thead>
-                <tr>
-                    <th>Select</th>
-                    <th>ID</th>
-                    <th>Color</th>
-                    <th>Mode</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="device in devices" :key="device.id">
-                    <td>
-                        <label class="checkbox">
-                            <input type="checkbox" :value="device.id" v-model="selected.devices">
-                        </label>
-                    </td>
-                    <td>{{ device.id }}</td>
-                    <td v-bind:value="device.color">{{ getColorName(device.color) }}</td>
-                    <td v-bind:value="device.mode">{{ nameFromModeID(device.mode) }}</td>
-                </tr>
-            </tbody>
-        </table>
-        <button class="button is-primary" v-on:click="submitData">Submit</button>
-    </div>
+    </section>
 </template>
 
 <script>
