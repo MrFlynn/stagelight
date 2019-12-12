@@ -3,6 +3,7 @@ import VueRouter from 'vue-router'
 
 import Device from '@/views/Devices.vue'
 import Votes from '@/views/Votes.vue'
+import Colors from '@/views/Colors.vue'
 
 Vue.use(VueRouter)
 
@@ -16,6 +17,11 @@ const routes = [
     path: '/votes',
     name: 'votes',
     component: Votes
+  },
+  {
+    path: '/colors',
+    name: 'colors',
+    component: Colors
   }
 ]
 

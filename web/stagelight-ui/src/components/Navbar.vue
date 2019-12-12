@@ -7,6 +7,7 @@
             <div class="navbar-start">
                 <a href="/" class="navbar-item">Devices</a>
                 <a href="/votes" class="navbar-item">Votes</a>
+                <a href="/colors" class="navbar-item">Colors</a>
             </div>
         </div>
     </nav>
