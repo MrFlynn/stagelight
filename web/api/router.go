@@ -89,6 +89,28 @@ func getVotes(w http.ResponseWriter, r *http.Request) {
 	log.Println("Sucessfully got list of votes")
 }
 
+func updateVotes(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Unable to parse request body with err: %s", err)
+		http.Error(w, "Malformed JSON request", http.StatusBadRequest)
+
+		return
+	}
+
+	err = dbhandler.AddMultiple("Votes", body)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%s", err), http.StatusBadRequest)
+		log.Printf("Controller unable to update votes: %s", err)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
 func getColors(w http.ResponseWriter, r *http.Request) {
 	colors, err := dbhandler.GetAll("Colors")
 	if err != nil {
@@ -118,6 +140,51 @@ func updateColors(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%s", err), http.StatusBadRequest)
 		log.Printf("Controller unable to update colors: %s", err)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func addNewColor(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	body, err := ioutil.ReadAll(r.Body)
+
+	var objmap map[string]*json.RawMessage
+	var name string
+	var sequence []uint32
+	
+	err = json.Unmarshal(body, &objmap)
+	err = json.Unmarshal(*objmap["name"], &name)
+	err = json.Unmarshal(*objmap["sequence"], &sequence)
+	if err != nil {
+		log.Printf("Unable to parse request body with err: %s", err)
+		http.Error(w, "Malformed JSON request", http.StatusBadRequest)
+
+		return
+	}
+
+	// This is super inneficient, but I don't time to implement a better method at the moment.
+	colors, err := dbhandler.GetAll("Colors")
+	if err != nil {
+		log.Printf("Unable to get list of colors: %s", err)
+		http.Error(w, "Could not get a list of colors", http.StatusInternalServerError)
+		
+		return
+	}
+
+	newColor := database.Color{
+		ID: uint8(len(colors) + 1),
+		Name: name,
+		Sequence: sequence,
+	}
+	val, _ := json.Marshal(newColor)
+	err = dbhandler.Add("Colors", val)
+
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%s", err), http.StatusBadRequest)
+		log.Printf("Controller unable to add new color: %s", err)
 
 		return
 	}
@@ -178,9 +245,15 @@ func createServer(addr string, port uint, databasePath string) *http.Server {
 		Headers("Content-Type", "application/json;charset=utf-8")
 
 	router.HandleFunc("/votes", getVotes).Methods(http.MethodGet)
+	router.HandleFunc("/votes", updateVotes).
+		Methods(http.MethodPost).
+		Headers("Content-Type", "application/json;charset=utf-8")
 
 	router.HandleFunc("/colors", getColors).Methods(http.MethodGet)
 	router.HandleFunc("/colors", updateColors).
+		Methods(http.MethodPost).
+		Headers("Content-Type", "application/json;charset=utf-8")
+	router.HandleFunc("/colors/new", addNewColor).
 		Methods(http.MethodPost).
 		Headers("Content-Type", "application/json;charset=utf-8")
 
