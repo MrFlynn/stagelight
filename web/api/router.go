@@ -89,6 +89,28 @@ func getVotes(w http.ResponseWriter, r *http.Request) {
 	log.Println("Sucessfully got list of votes")
 }
 
+func updateVotes(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Unable to parse request body with err: %s", err)
+		http.Error(w, "Malformed JSON request", http.StatusBadRequest)
+
+		return
+	}
+
+	err = dbhandler.AddMultiple("Votes", body)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("%s", err), http.StatusBadRequest)
+		log.Printf("Controller unable to update votes: %s", err)
+
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
 func getColors(w http.ResponseWriter, r *http.Request) {
 	colors, err := dbhandler.GetAll("Colors")
 	if err != nil {
@@ -178,6 +200,9 @@ func createServer(addr string, port uint, databasePath string) *http.Server {
 		Headers("Content-Type", "application/json;charset=utf-8")
 
 	router.HandleFunc("/votes", getVotes).Methods(http.MethodGet)
+	router.HandleFunc("/votes", updateVotes).
+		Methods(http.MethodPost).
+		Headers("Content-Type", "application/json;charset=utf-8")
 
 	router.HandleFunc("/colors", getColors).Methods(http.MethodGet)
 	router.HandleFunc("/colors", updateColors).
