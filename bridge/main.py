@@ -179,10 +179,10 @@ class Bridge:
 
         log.info('Radio initialized')
 
-        asyncio.create_task(ws_listener())
-        asyncio.create_task(autodiscover())
-        asyncio.create_task(packet_send())
-        asyncio.create_task(packet_receive())
+        asyncio.create_task(self.ws_listener())
+        asyncio.create_task(self.autodiscover())
+        asyncio.create_task(self.packet_send())
+        asyncio.create_task(self.packet_receive())
 
         self._loop.run_forever()
 
